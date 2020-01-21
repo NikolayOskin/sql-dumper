@@ -3,29 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
 )
-
-// ExportResult the result of dump db operation
-type ExportResult struct {
-	// Path to exported file
-	Path string
-	// MIME type of the exported file (e.g. application/x-tar)
-	MIME  string
-	Error error
-}
-
-// Filename returns the just filename component of the `Path` attribute
-func (x ExportResult) Filename() string {
-	_, filename := filepath.Split(x.Path)
-	return filename
-}
 
 func main() {
 	var configFile string
 
-	flag.StringVar(&configFile, "config", "./config.json", "Path to json config file")
+	flag.StringVar(&configFile, "config", "./config.json", "Path to json config")
 	flag.Parse()
 
 	config := &Config{}
@@ -46,27 +29,31 @@ func main() {
 		Options:  nil,
 	}
 
-	go deleteOldDumps(s3, config.dumpNames)
+	ch := make(chan bool)
+	go deleteOldDumps(s3, config.dumpNames, ch)
 
 	dump := mysql.Dump(config.DumpNameFormat)
+
 	err := s3.Upload(dump)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	// Deleting dump
-	err = os.Remove(dump.Path)
+	err = dump.Delete()
 	if err != nil {
-		fmt.Println(err.Error())
-		return
+		fmt.Println(err)
 	}
+
+	<-ch
 
 	fmt.Println("Success!")
 }
 
-func deleteOldDumps(s3 *S3, dumpnames []string) {
-	err := s3.DeleteFilesExcept(dumpnames)
+func deleteOldDumps(s3 *S3, latestDumps []string, ch chan<- bool) {
+	err := s3.DeleteFilesExcept(latestDumps)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
+	ch <- true
 }
