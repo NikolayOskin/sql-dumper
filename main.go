@@ -3,16 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 func main() {
-	var configFile string
+	var (
+		configFile string
+		err        error
+	)
 
 	flag.StringVar(&configFile, "config", "./config.json", "Path to json config")
 	flag.Parse()
 
 	config := &Config{}
-	config.Init(configFile)
+	err = config.Init(configFile)
+	if err != nil {
+		fmt.Printf("Error while initializing configuration, exiting: %v", err)
+		os.Exit(1)
+	}
 
 	s3 := &S3{
 		Region:       config.AwsRegion,
@@ -34,9 +42,9 @@ func main() {
 
 	dump := mysql.Dump(config.DumpNameFormat)
 
-	err := s3.Upload(dump)
+	err = s3.Upload(dump)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("Problem(s) while uploading file to S3: %v", err)
 	}
 
 	err = dump.Delete()
@@ -52,7 +60,7 @@ func main() {
 func deleteOldDumps(s3 *S3, latestDumps []string, ch chan<- bool) {
 	err := s3.DeleteFilesExcept(latestDumps)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("Problem(s) with deleting old dumps from S3: %v", err)
 	}
 
 	ch <- true

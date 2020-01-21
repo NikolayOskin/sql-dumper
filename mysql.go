@@ -35,9 +35,10 @@ func (x MySQL) Dump(format string) *ExportResult {
 	result.Path = fmt.Sprintf(`%v.sql`, time.Now().Format(format))
 
 	options := append(x.dumpOptions(), fmt.Sprintf(`-r%v`, result.Path))
+
 	_, err := exec.Command(MysqlDumpCmd, options...).Output()
 	if err != nil {
-		fmt.Println(err.Error())
+		err = fmt.Errorf("trying execute mysqldump command: %v", err)
 		result.Error = err
 	}
 
@@ -49,9 +50,11 @@ func (x MySQL) dumpOptions() []string {
 	options = append(options, fmt.Sprintf(`-h%v`, x.Host))
 	options = append(options, fmt.Sprintf(`-P%v`, x.Port))
 	options = append(options, fmt.Sprintf(`-u%v`, x.User))
+
 	if x.Password != "" {
 		options = append(options, fmt.Sprintf(`-p%v`, x.Password))
 	}
 	options = append(options, x.DB)
+
 	return options
 }

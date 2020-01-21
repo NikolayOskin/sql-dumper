@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 
 	"gopkg.in/amz.v3/aws"
@@ -30,26 +31,31 @@ func (x *S3) Upload(dump *ExportResult) error {
 
 	bucket, err := s.Bucket(x.Bucket)
 	if err != nil {
-		return err
+		return fmt.Errorf("trying to return S3 bucket when uploading: %v", err)
 	}
 
 	// Uploading
 	file, err := os.Open(dump.Path)
 	if err != nil {
-		return err
+		return fmt.Errorf("trying to open dump file when uploading to S3: %v", err)
 	}
+
 	defer file.Close()
 
 	buffy := bufio.NewReader(file)
 	stat, err := file.Stat()
 	if err != nil {
-		return err
+		return fmt.Errorf("trying to get dump file stat when uploading to S3: %v", err)
 	}
 
 	size := stat.Size()
 
 	err = bucket.PutReader(dump.Filename(), buffy, size, dump.MIME, s3.BucketOwnerFull)
-	return err
+	if err != nil {
+		return fmt.Errorf("trying to insert object to S3: %v", err)
+	}
+
+	return nil
 }
 
 func (x *S3) DeleteFile(filename string) error {
@@ -81,23 +87,23 @@ func (x *S3) DeleteFilesExcept(filenames []string) error {
 
 	bucket, err := s.Bucket(x.Bucket)
 	if err != nil {
-		return err
+		return fmt.Errorf("trying return S3 bucket: %v", err)
 	}
 
 	list, err := bucket.List("", "/", "", 1000)
 	if err != nil {
-		return err
+		return fmt.Errorf("trying to list object from S3 bucket: %v", err)
 	}
 
 	for i := range list.Contents {
 		if !stringInSlice(filenames, list.Contents[i].Key) {
 			err = bucket.Del(list.Contents[i].Key)
 			if err != nil {
-				return err
+				return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
 			}
 		}
 	}
-	return err
+	return nil
 }
 
 func stringInSlice(slice []string, s string) bool {

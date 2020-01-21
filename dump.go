@@ -25,8 +25,7 @@ func (x ExportResult) Filename() string {
 func (x *ExportResult) Delete() error {
 	err := os.Remove(x.Path)
 	if err != nil {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("trying to delete dump file from server: %v", err)
 	}
 	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"time"
 )
 
@@ -27,19 +26,17 @@ type Config struct {
 	dumpNames      []string
 }
 
-func (c *Config) Init(configFile string) {
+func (c *Config) Init(configFile string) error {
 	var date, dumpName string
 
 	configJson, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf("reading json config file: %v", err)
 	}
 
 	err = json.Unmarshal(configJson, &c)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return fmt.Errorf("trying to unmarshal json config: %v", err)
 	}
 
 	// collecting filenames which will be kept on S3 bucket
@@ -48,4 +45,6 @@ func (c *Config) Init(configFile string) {
 		dumpName = fmt.Sprintf(`%v.sql`, date)
 		c.dumpNames = append(c.dumpNames, dumpName)
 	}
+
+	return nil
 }
