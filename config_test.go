@@ -5,12 +5,12 @@ import (
 )
 
 func TestConfigInit(t *testing.T) {
-	config := &Config{
-		dumpsToKeep:    10,
-		fileNameFormat: "2006-01-02",
+	configFile := "./config.json"
+	config := &Config{}
+	config.Init(configFile)
+
+	if len(config.dumpNames) != config.DumpsToKeep {
+		t.Errorf("Dumpnames slice should be length %d, got: %d.", config.DumpsToKeep, len(config.dumpNames))
 	}
-	config.init()
-	if len(config.dumpNames) != config.dumpsToKeep {
-		t.Errorf("Dumpnames slice should be length %d, got: %d.", config.dumpsToKeep, len(config.dumpNames))
-	}
+
 }
