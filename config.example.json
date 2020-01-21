@@ -1,0 +1,15 @@
+{
+  "mysql_host": "localhost",
+  "mysql_port": 3306,
+  "mysql_db": "db",
+  "mysql_user": "admin",
+  "mysql_password": "password",
+
+  "aws_region": "us-east-2",
+  "aws_bucket": "my-bucket",
+  "aws_key": "*****",
+  "aws_secret": "*****",
+
+  "dumps_to_keep": 10,
+  "dump_name_format": "2006-01-02"
+}
