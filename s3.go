@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
+	"time"
 
 	"gopkg.in/amz.v3/aws"
 	"gopkg.in/amz.v3/s3"
@@ -15,6 +17,11 @@ type S3 struct {
 	Bucket       string
 	AccessKey    string
 	ClientSecret string
+}
+
+type ObjectS3 struct {
+	Key          string
+	LastModified time.Time
 }
 
 // Upload dump sql file to storage
@@ -58,27 +65,7 @@ func (x *S3) Upload(dump *ExportResult) error {
 	return nil
 }
 
-func (x *S3) DeleteFile(filename string) error {
-	auth := aws.Auth{
-		AccessKey: x.AccessKey,
-		SecretKey: x.ClientSecret,
-	}
-	s := s3.New(auth, aws.Regions[x.Region])
-
-	bucket, err := s.Bucket(x.Bucket)
-	if err != nil {
-		return err
-	}
-
-	err = bucket.Del(filename)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (x *S3) DeleteFilesExcept(filenames []string) error {
+func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
 	auth := aws.Auth{
 		AccessKey: x.AccessKey,
 		SecretKey: x.ClientSecret,
@@ -95,22 +82,44 @@ func (x *S3) DeleteFilesExcept(filenames []string) error {
 		return fmt.Errorf("trying to list object from S3 bucket: %v", err)
 	}
 
+	var objects []ObjectS3
+
 	for i := range list.Contents {
-		if !stringInSlice(filenames, list.Contents[i].Key) {
-			err = bucket.Del(list.Contents[i].Key)
-			if err != nil {
-				return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
-			}
+		object := ObjectS3{
+			Key:          list.Contents[i].Key,
+			LastModified: convertStringToTime(list.Contents[i].LastModified),
+		}
+		objects = append(objects, object)
+
+	}
+
+	sortByDate(objects)
+
+	objects = objects[:dumpsToKeep]
+
+	for _, object := range objects {
+		err = bucket.Del(object.Key)
+		if err != nil {
+			return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
 		}
 	}
+
 	return nil
 }
 
-func stringInSlice(slice []string, s string) bool {
-	for _, b := range slice {
-		if b == s {
-			return true
-		}
+func convertStringToTime(str string) time.Time {
+	layout := "2006-01-02T15:04:05.000Z"
+	t, err := time.Parse(layout, str)
+
+	if err != nil {
+		fmt.Println(err)
 	}
-	return false
+
+	return t
+}
+
+func sortByDate(objects []ObjectS3) {
+	sort.SliceStable(objects, func(i, j int) bool {
+		return objects[i].LastModified.After(objects[j].LastModified)
+	})
 }

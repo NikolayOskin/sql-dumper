@@ -38,7 +38,7 @@ func main() {
 	}
 
 	ch := make(chan bool)
-	go deleteOldDumps(s3, config.dumpNames, ch)
+	go deleteOldDumps(s3, config.DumpsToKeep, ch)
 
 	dump := mysql.Dump(config.DumpNameFormat)
 
@@ -57,8 +57,8 @@ func main() {
 	fmt.Println("Success!")
 }
 
-func deleteOldDumps(s3 *S3, latestDumps []string, ch chan<- bool) {
-	err := s3.DeleteFilesExcept(latestDumps)
+func deleteOldDumps(s3 *S3, dumpsToKeep uint, ch chan<- bool) {
+	err := s3.DeleteFilesExceptLatest(dumpsToKeep)
 	if err != nil {
 		fmt.Printf("Problem(s) with deleting old dumps from S3: %v", err)
 	}
