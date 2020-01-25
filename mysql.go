@@ -29,10 +29,10 @@ type MySQL struct {
 }
 
 // Dump produces a `mysqldump` of the specified database.
-func (x MySQL) Dump(format string) *ExportResult {
+func (x MySQL) Dump() *ExportResult {
 	result := &ExportResult{MIME: "application/sql"}
 
-	result.Path = fmt.Sprintf(`%v.sql`, time.Now().Format(format))
+	result.Path = fmt.Sprintf(`%v_%v.sql`, time.Now().Format("2006-01-02"), time.Now().Unix())
 
 	options := append(x.dumpOptions(), fmt.Sprintf(`-r%v`, result.Path))
 
