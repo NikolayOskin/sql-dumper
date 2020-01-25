@@ -30,15 +30,9 @@ func (x *S3) Upload(dump *ExportResult) error {
 		return dump.Error
 	}
 
-	auth := aws.Auth{
-		AccessKey: x.AccessKey,
-		SecretKey: x.ClientSecret,
-	}
-	s := s3.New(auth, aws.Regions[x.Region])
-
-	bucket, err := s.Bucket(x.Bucket)
+	bucket, err := x.getBucket()
 	if err != nil {
-		return fmt.Errorf("trying to return S3 bucket when uploading: %v", err)
+		return err
 	}
 
 	// Uploading
@@ -66,15 +60,9 @@ func (x *S3) Upload(dump *ExportResult) error {
 }
 
 func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
-	auth := aws.Auth{
-		AccessKey: x.AccessKey,
-		SecretKey: x.ClientSecret,
-	}
-	s := s3.New(auth, aws.Regions[x.Region])
-
-	bucket, err := s.Bucket(x.Bucket)
+	bucket, err := x.getBucket()
 	if err != nil {
-		return fmt.Errorf("trying return S3 bucket: %v", err)
+		return err
 	}
 
 	list, err := bucket.List("", "/", "", 1000)
@@ -90,10 +78,9 @@ func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
 			LastModified: convertStringToTime(list.Contents[i].LastModified),
 		}
 		objects = append(objects, object)
-
 	}
 
-	sortByDate(objects)
+	sortFilesByLastModified(objects)
 
 	objects = objects[:dumpsToKeep]
 
@@ -107,6 +94,21 @@ func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
 	return nil
 }
 
+func (x *S3) getBucket() (*s3.Bucket, error) {
+	auth := aws.Auth{
+		AccessKey: x.AccessKey,
+		SecretKey: x.ClientSecret,
+	}
+	s := s3.New(auth, aws.Regions[x.Region])
+
+	bucket, err := s.Bucket(x.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("trying return S3 bucket: %v", err)
+	}
+
+	return bucket, nil
+}
+
 func convertStringToTime(str string) time.Time {
 	layout := "2006-01-02T15:04:05.000Z"
 	t, err := time.Parse(layout, str)
@@ -118,7 +120,7 @@ func convertStringToTime(str string) time.Time {
 	return t
 }
 
-func sortByDate(objects []ObjectS3) {
+func sortFilesByLastModified(objects []ObjectS3) {
 	sort.SliceStable(objects, func(i, j int) bool {
 		return objects[i].LastModified.After(objects[j].LastModified)
 	})
