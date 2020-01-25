@@ -29,3 +29,12 @@ func (x *ExportResult) Delete() error {
 	}
 	return nil
 }
+
+func deleteOldDumps(s3 *S3, dumpsToKeep int, ch chan<- bool) {
+	err := s3.DeleteOldFiles(dumpsToKeep)
+	if err != nil {
+		fmt.Printf("Problem(s) with deleting old dumps from S3: %v", err)
+	}
+
+	ch <- true
+}
