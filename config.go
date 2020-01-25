@@ -22,7 +22,7 @@ type Config struct {
 	DumpsToKeep uint `json:"dumps_to_keep"`
 }
 
-func (c *Config) Init(configFile string) error {
+func (c *Config) Parse(configFile string) error {
 
 	configJson, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -38,13 +38,16 @@ func (c *Config) Init(configFile string) error {
 }
 
 func (c *Config) Validate() error {
-	if len(strings.TrimSpace(c.MysqlHost)) < 1 || len(strings.TrimSpace(c.MysqlPort)) < 1 ||
-		len(strings.TrimSpace(c.MysqlDb)) < 1 || len(strings.TrimSpace(c.MysqlUser)) < 1 {
+	if isEmpty(c.MysqlHost) || isEmpty(c.MysqlPort) || isEmpty(c.MysqlDb) || isEmpty(c.MysqlUser) {
 		return fmt.Errorf("MySQL data is not filled")
 	}
-	if len(c.AwsRegion) < 1 || len(c.AwsBucket) < 1 || len(c.AwsKey) < 1 || len(c.AwsSecret) < 1 {
+	if isEmpty(c.AwsRegion) || isEmpty(c.AwsBucket) || isEmpty(c.AwsKey) || isEmpty(c.AwsSecret) {
 		return fmt.Errorf("AWS data is not filled")
 	}
 
 	return nil
+}
+
+func isEmpty(s string) bool {
+	return len(strings.TrimSpace(s)) < 1
 }
