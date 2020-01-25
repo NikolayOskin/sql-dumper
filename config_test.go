@@ -194,6 +194,22 @@ func TestConfigValidation(t *testing.T) {
 			t.Errorf("Validation rule is not correct, %v", config)
 		}
 	}
+	config := &Config{
+		MysqlHost:   "localhost",
+		MysqlPort:   "3306",
+		MysqlDb:     "some",
+		MysqlUser:   "some",
+		MysqlPass:   "",
+		AwsRegion:   "some",
+		AwsBucket:   "some",
+		AwsKey:      "some",
+		AwsSecret:   "som",
+		DumpsToKeep: 5,
+	}
+	err := config.Validate()
+	if err != nil {
+		t.Errorf("Valid config throwed error")
+	}
 }
 
 func TestConfigInitWithExistedConfig(t *testing.T) {

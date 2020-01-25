@@ -19,7 +19,7 @@ type Config struct {
 	AwsKey    string `json:"aws_key"`
 	AwsSecret string `json:"aws_secret"`
 
-	DumpsToKeep uint `json:"dumps_to_keep"`
+	DumpsToKeep int `json:"dumps_to_keep"`
 }
 
 func (c *Config) Parse(configFile string) error {
