@@ -38,8 +38,17 @@ func (c *Config) Parse(configFile string) error {
 }
 
 func (c *Config) Validate() error {
-	if isEmpty(c.MysqlHost) || isEmpty(c.MysqlPort) || isEmpty(c.MysqlDb) || isEmpty(c.MysqlUser) {
-		return fmt.Errorf("MySQL data is not filled")
+	if isEmpty(c.MysqlHost) {
+		return fmt.Errorf("MySQL host is not filled")
+	}
+	if isEmpty(c.MysqlPort) {
+		return fmt.Errorf("MySQL port is not filled")
+	}
+	if isEmpty(c.MysqlDb) {
+		return fmt.Errorf("MySQL database name is not filled")
+	}
+	if isEmpty(c.MysqlUser) {
+		return fmt.Errorf("MySQL user is not filled")
 	}
 	if isEmpty(c.AwsRegion) || isEmpty(c.AwsBucket) || isEmpty(c.AwsKey) || isEmpty(c.AwsSecret) {
 		return fmt.Errorf("AWS data is not filled")

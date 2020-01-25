@@ -5,32 +5,194 @@ import (
 )
 
 func TestConfigValidation(t *testing.T) {
-	config := &Config{}
 
-	// Validation empty config
-	err := config.Validate()
-	if err == nil {
-		t.Errorf("Validation doesn't work")
+	testCases := []*Config{
+		{},
+		{
+			MysqlHost: "",
+			MysqlDb:   "",
+			MysqlPort: "",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "  ",
+			MysqlDb:   "  ",
+			MysqlPort: "  ",
+			MysqlUser: "  ",
+			MysqlPass: "  ",
+			AwsRegion: "  ",
+			AwsBucket: "  ",
+			AwsKey:    "  ",
+			AwsSecret: "  ",
+		},
+		{
+			MysqlHost: "",
+			MysqlDb:   "",
+			MysqlPort: "",
+			MysqlUser: "",
+			MysqlPass: "",
+		},
+		{
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "",
+			MysqlPort: "",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "",
+			MysqlDb:   "name",
+			MysqlPort: "",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "",
+			MysqlDb:   "",
+			MysqlPort: "3232",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "",
+			MysqlDb:   "",
+			MysqlPort: "",
+			MysqlUser: "eqwe",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "",
+			MysqlPort: "3234",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "",
+			MysqlPort: "",
+			MysqlUser: "ewer",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "3306",
+			MysqlUser: "",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "",
+			MysqlUser: "some",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "3306",
+			MysqlUser: "some",
+			MysqlPass: "",
+			AwsRegion: "123",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "3306",
+			MysqlUser: "some",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "123",
+			AwsKey:    "",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "3306",
+			MysqlUser: "some",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "123",
+			AwsSecret: "",
+		},
+		{
+			MysqlHost: "localhost",
+			MysqlDb:   "name",
+			MysqlPort: "3306",
+			MysqlUser: "some",
+			MysqlPass: "",
+			AwsRegion: "",
+			AwsBucket: "",
+			AwsKey:    "",
+			AwsSecret: "123",
+		},
 	}
 
-	config.MysqlHost, config.MysqlUser, config.MysqlDb, config.MysqlPort = "s", "s", "s", "s"
-	err = config.Validate()
-	if err == nil {
-		t.Errorf("Validation doesn't work")
-	}
-
-	config.AwsSecret, config.AwsKey, config.AwsBucket, config.AwsRegion,
-		config.MysqlUser, config.MysqlPort, config.MysqlDb, config.MysqlHost = "s", "s", "s", "s", "s", "s", "s", "s"
-	err = config.Validate()
-	if err != nil {
-		t.Errorf("Config didn't pass validation even if its filled")
-	}
-
-	config.AwsSecret, config.AwsKey, config.AwsBucket, config.AwsRegion,
-		config.MysqlUser, config.MysqlPort, config.MysqlDb, config.MysqlHost = " ", " ", " ", " ", " ", " ", " ", " "
-	err = config.Validate()
-	if err == nil {
-		t.Errorf("Trimmed config fields are empty strings")
+	for _, config := range testCases {
+		err := config.Validate()
+		if err == nil {
+			t.Errorf("Validation rule is not correct, %v", config)
+		}
 	}
 }
 
