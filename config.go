@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 type Config struct {
@@ -19,9 +20,6 @@ type Config struct {
 	AwsSecret string `json:"aws_secret"`
 
 	DumpsToKeep uint `json:"dumps_to_keep"`
-
-	// By default "2006-01-02" format will store dumps like "2020-01-01.sql"
-	DumpNameFormat string `json:"dump_name_format"`
 }
 
 func (c *Config) Init(configFile string) error {
@@ -34,6 +32,18 @@ func (c *Config) Init(configFile string) error {
 	err = json.Unmarshal(configJson, &c)
 	if err != nil {
 		return fmt.Errorf("trying to unmarshal json config: %v", err)
+	}
+
+	return nil
+}
+
+func (c *Config) Validate() error {
+	if len(strings.TrimSpace(c.MysqlHost)) < 1 || len(strings.TrimSpace(c.MysqlPort)) < 1 ||
+		len(strings.TrimSpace(c.MysqlDb)) < 1 || len(strings.TrimSpace(c.MysqlUser)) < 1 {
+		return fmt.Errorf("MySQL data is not filled")
+	}
+	if len(c.AwsRegion) < 1 || len(c.AwsBucket) < 1 || len(c.AwsKey) < 1 || len(c.AwsSecret) < 1 {
+		return fmt.Errorf("AWS data is not filled")
 	}
 
 	return nil
