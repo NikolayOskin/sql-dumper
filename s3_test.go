@@ -27,10 +27,11 @@ func TestSortFilesByLastModified(t *testing.T) {
 	}
 	objects := []ObjectS3{obj1, obj2}
 
-	objPosition0 := objects[0]
+	firstObjBeforeSorting := objects[0]
+	sortByLastModified(objects)
+	firstObjAfterSorting := objects[0]
 
-	sortFilesByLastModified(objects)
-	if objPosition0 == objects[0] {
+	if firstObjBeforeSorting == firstObjAfterSorting {
 		t.Errorf("Objects in slice were not sorted properly")
 	}
 }
@@ -72,5 +73,57 @@ func TestUploadWithIncorrectBucketName(t *testing.T) {
 	err := s.Upload(dump)
 	if err == nil {
 		t.Errorf("Incorrect bucket name didn't throw and error")
+	}
+}
+
+func TestKeepLatest(t *testing.T) {
+	objects := generateObjects()
+
+	// DumpsToKeep is less than slice length
+	latestObjects := keepLatest(objects, 3)
+	if len(latestObjects) != 3 {
+		t.Errorf("Objects were not filtered")
+	}
+
+	// DumpsToKeep is more than slice length
+	latestObjects = keepLatest(objects, 20)
+	if len(latestObjects) != 4 {
+		t.Errorf("Slice size must be 4")
+	}
+}
+
+func generateObjects() []ObjectS3 {
+	objects := []ObjectS3{
+		{
+			Key:          "some",
+			LastModified: time.Now(),
+		},
+		{
+			Key:          "some1",
+			LastModified: time.Now().Add(1),
+		},
+		{
+			Key:          "some2",
+			LastModified: time.Now().Add(2),
+		},
+		{
+			Key:          "some3",
+			LastModified: time.Now().Add(3),
+		},
+	}
+	return objects
+}
+
+func TestIsLatest(t *testing.T) {
+	objects := generateObjects()
+
+	result := isLatest("some", objects)
+	if result == false {
+		t.Errorf("Object not found in collection")
+	}
+
+	result = isLatest("12312312313", objects)
+	if result == true {
+		t.Errorf("Object not found in collection")
 	}
 }

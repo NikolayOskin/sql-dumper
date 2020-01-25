@@ -3,25 +3,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	"log"
 )
 
 func main() {
-	var (
-		configFile string
-		err        error
-	)
+	var configFile string
 
 	flag.StringVar(&configFile, "config", "./config.json", "Path to json config")
 	flag.Parse()
 
-	config := &Config{}
-	err = config.Init(configFile)
-	if err != nil {
-		fmt.Printf("Error while initializing configuration, exiting: %v", err)
-		os.Exit(1)
-	}
+	config := getConfig(configFile)
+	run(config)
+}
 
+func run(config *Config) {
 	s3 := &S3{
 		Region:       config.AwsRegion,
 		Bucket:       config.AwsBucket,
@@ -40,15 +35,13 @@ func main() {
 	ch := make(chan bool)
 	go deleteOldDumps(s3, config.DumpsToKeep, ch)
 
-	dump := mysql.Dump(config.DumpNameFormat)
+	dump := mysql.Dump()
 
-	err = s3.Upload(dump)
-	if err != nil {
+	if err := s3.Upload(dump); err != nil {
 		fmt.Printf("Problem(s) while uploading file to S3: %v", err)
 	}
 
-	err = dump.Delete()
-	if err != nil {
+	if err := dump.Delete(); err != nil {
 		fmt.Println(err)
 	}
 
@@ -57,11 +50,15 @@ func main() {
 	fmt.Println("Success!")
 }
 
-func deleteOldDumps(s3 *S3, dumpsToKeep uint, ch chan<- bool) {
-	err := s3.DeleteFilesExceptLatest(dumpsToKeep)
-	if err != nil {
-		fmt.Printf("Problem(s) with deleting old dumps from S3: %v", err)
+func getConfig(configFile string) *Config {
+	config := &Config{}
+	if err := config.Parse(configFile); err != nil {
+		log.Fatal(err)
 	}
 
-	ch <- true
+	if err := config.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	return config
 }

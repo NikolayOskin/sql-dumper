@@ -59,7 +59,7 @@ func (x *S3) Upload(dump *ExportResult) error {
 	return nil
 }
 
-func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
+func (x *S3) DeleteOldFiles(dumpsToKeep int) error {
 	bucket, err := x.getBucket()
 	if err != nil {
 		return err
@@ -80,14 +80,15 @@ func (x *S3) DeleteFilesExceptLatest(dumpsToKeep uint) error {
 		objects = append(objects, object)
 	}
 
-	sortFilesByLastModified(objects)
+	sortByLastModified(objects)
+	latestObjects := keepLatest(objects, dumpsToKeep)
 
-	objects = objects[:dumpsToKeep]
-
-	for _, object := range objects {
-		err = bucket.Del(object.Key)
-		if err != nil {
-			return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
+	for i := range list.Contents {
+		if !isLatest(list.Contents[i].Key, latestObjects) {
+			err = bucket.Del(list.Contents[i].Key)
+			if err != nil {
+				return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
+			}
 		}
 	}
 
@@ -109,6 +110,23 @@ func (x *S3) getBucket() (*s3.Bucket, error) {
 	return bucket, nil
 }
 
+func isLatest(key string, latestObjects []ObjectS3) bool {
+	for _, object := range latestObjects {
+		if object.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func keepLatest(objects []ObjectS3, dumpsToKeep int) []ObjectS3 {
+	if len(objects) > dumpsToKeep {
+		latestObjects := objects[:dumpsToKeep]
+		return latestObjects
+	}
+	return objects
+}
+
 func convertStringToTime(str string) time.Time {
 	layout := "2006-01-02T15:04:05.000Z"
 	t, err := time.Parse(layout, str)
@@ -120,7 +138,7 @@ func convertStringToTime(str string) time.Time {
 	return t
 }
 
-func sortFilesByLastModified(objects []ObjectS3) {
+func sortByLastModified(objects []ObjectS3) {
 	sort.SliceStable(objects, func(i, j int) bool {
 		return objects[i].LastModified.After(objects[j].LastModified)
 	})
