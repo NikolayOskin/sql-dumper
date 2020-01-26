@@ -13,15 +13,10 @@ var (
 
 // MySQL is an `Exporter` interface that backs up a MySQL database via the `mysqldump` command
 type MySQL struct {
-	// DB Host (e.g. 127.0.0.1)
-	Host string
-	// DB Port (e.g. 3306)
-	Port string
-	// DB Name
-	DB string
-	// DB User
-	User string
-	// DB Password
+	Host     string
+	Port     string
+	DB       string
+	User     string
 	Password string
 	// Extra mysqldump options
 	// e.g []string{"--extended-insert"}
@@ -38,7 +33,7 @@ func (x MySQL) Dump() *ExportResult {
 
 	_, err := exec.Command(MysqlDumpCmd, options...).Output()
 	if err != nil {
-		err = fmt.Errorf("trying execute mysqldump command: %v", err)
+		err = fmt.Errorf("failed execute mysqldump command: %v", err)
 		result.Error = err
 	}
 

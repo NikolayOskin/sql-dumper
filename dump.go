@@ -25,7 +25,7 @@ func (x ExportResult) Filename() string {
 func (x *ExportResult) Delete() error {
 	err := os.Remove(x.Path)
 	if err != nil {
-		return fmt.Errorf("trying to delete dump file from server: %v", err)
+		return fmt.Errorf("failed to delete dump file %s: %s", x.Path, err)
 	}
 	return nil
 }
@@ -33,7 +33,7 @@ func (x *ExportResult) Delete() error {
 func deleteOldDumps(s3 *S3, dumpsToKeep int, ch chan<- bool) {
 	err := s3.DeleteOldFiles(dumpsToKeep)
 	if err != nil {
-		fmt.Printf("Problem(s) with deleting old dumps from S3: %v", err)
+		fmt.Printf("failed to delete old dumps from S3: %v", err)
 	}
 
 	ch <- true
