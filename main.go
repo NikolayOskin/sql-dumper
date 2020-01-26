@@ -12,7 +12,10 @@ func main() {
 	flag.StringVar(&configFile, "config", "./config.json", "Path to json config")
 	flag.Parse()
 
-	config := getConfig(configFile)
+	config, err := getConfig(configFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 	run(config)
 }
 
@@ -50,15 +53,15 @@ func run(config *Config) {
 	fmt.Println("Success!")
 }
 
-func getConfig(configFile string) *Config {
+func getConfig(configFile string) (*Config, error) {
 	config := &Config{}
 	if err := config.Parse(configFile); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if err := config.Validate(); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return config
+	return config, nil
 }
