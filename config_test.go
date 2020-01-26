@@ -230,6 +230,15 @@ func TestConfigInitWithNonExistedConfig(t *testing.T) {
 	}
 }
 
+func TestConfig_ParseConfigWithInvalidFields(t *testing.T) {
+	configFile := "./tests/config.invalid.json"
+	config := &Config{}
+	err := config.Parse(configFile)
+	if err == nil {
+		t.Errorf("Config with invalid fields should throw an error")
+	}
+}
+
 func TestIsStringEmpty(t *testing.T) {
 	str := "    "
 	if isEmpty(str) == false {
