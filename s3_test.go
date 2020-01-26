@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gopkg.in/amz.v3/s3"
 	"testing"
 	"time"
 )
@@ -12,7 +13,7 @@ func TestConvertStringToTime(t *testing.T) {
 	parsedStr, _ := time.Parse(s, s)
 
 	if result != parsedStr {
-		t.Errorf("Time conversion didn't match")
+		t.Errorf("time conversion didn't match")
 	}
 }
 
@@ -48,18 +49,37 @@ func TestGetBucket(t *testing.T) {
 	}
 }
 
-func TestUploadWithDumpThatHasError(t *testing.T) {
-	s := &S3{}
-	s.Bucket = "some-bucket"
-	s.AccessKey = "****"
-	s.ClientSecret = "***"
+func TestS3_Upload(t *testing.T) {
+	s := &S3{
+		Region:       "some",
+		Bucket:       "some",
+		AccessKey:    "some",
+		ClientSecret: "some",
+	}
 
-	dump := &ExportResult{}
-	dump.Error = fmt.Errorf("test error")
+	testDumps := []*ExportResult{
+		{
+			Path:  "./tests/dump.sql",
+			Error: nil,
+		},
+		{
+			Path:  "./tests/dump_that_not_existed.sql",
+			Error: nil,
+		},
+		{
+			Path:  "",
+			Error: nil,
+		},
+		{
+			Path:  "./tests/dump.sql",
+			Error: fmt.Errorf(""),
+		},
+	}
 
-	err := s.Upload(dump)
-	if err == nil {
-		t.Errorf("Dump with Error field passed to upload method must throw error")
+	for _, dump := range testDumps {
+		if s.Upload(dump) == nil {
+			t.Errorf("failed with %v", dump)
+		}
 	}
 }
 
@@ -125,5 +145,21 @@ func TestIsLatest(t *testing.T) {
 	result = isLatest("12312312313", objects)
 	if result == true {
 		t.Errorf("Object not found in collection")
+	}
+}
+
+func TestGetObjects(t *testing.T) {
+	list := &s3.ListResp{
+		Contents: []s3.Key{
+			{
+				Key:          "some",
+				LastModified: "2006-01-02T15:04:05.000Z",
+			},
+		},
+	}
+	S3 := &S3{}
+	objects := S3.getObjects(list)
+	if objects == nil {
+		t.Fail()
 	}
 }

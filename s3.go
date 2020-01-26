@@ -38,7 +38,7 @@ func (x *S3) Upload(dump *ExportResult) error {
 	// Uploading
 	file, err := os.Open(dump.Path)
 	if err != nil {
-		return fmt.Errorf("trying to open dump file when uploading to S3: %v", err)
+		return fmt.Errorf("failed open file %s: %s", dump.Path, err)
 	}
 
 	defer file.Close()
@@ -46,14 +46,14 @@ func (x *S3) Upload(dump *ExportResult) error {
 	buffy := bufio.NewReader(file)
 	stat, err := file.Stat()
 	if err != nil {
-		return fmt.Errorf("trying to get dump file stat when uploading to S3: %v", err)
+		return fmt.Errorf("failed to return stat for %s: %s", dump.Path, err)
 	}
 
 	size := stat.Size()
 
 	err = bucket.PutReader(dump.Filename(), buffy, size, dump.MIME, s3.BucketOwnerFull)
 	if err != nil {
-		return fmt.Errorf("trying to insert object to S3: %v", err)
+		return fmt.Errorf("failed to upload file %s to S3: %s", dump.Filename(), err)
 	}
 
 	return nil
@@ -70,6 +70,24 @@ func (x *S3) DeleteOldFiles(dumpsToKeep int) error {
 		return fmt.Errorf("trying to list object from S3 bucket: %v", err)
 	}
 
+	objects := x.getObjects(list)
+
+	sortByLastModified(objects)
+	latestObjects := keepLatest(objects, dumpsToKeep)
+
+	for i := range list.Contents {
+		if !isLatest(list.Contents[i].Key, latestObjects) {
+			err = bucket.Del(list.Contents[i].Key)
+			if err != nil {
+				return fmt.Errorf("failed to delete object %s from S3 bucket: %s", list.Contents[i].Key, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (x *S3) getObjects(list *s3.ListResp) []ObjectS3 {
 	var objects []ObjectS3
 
 	for i := range list.Contents {
@@ -79,20 +97,7 @@ func (x *S3) DeleteOldFiles(dumpsToKeep int) error {
 		}
 		objects = append(objects, object)
 	}
-
-	sortByLastModified(objects)
-	latestObjects := keepLatest(objects, dumpsToKeep)
-
-	for i := range list.Contents {
-		if !isLatest(list.Contents[i].Key, latestObjects) {
-			err = bucket.Del(list.Contents[i].Key)
-			if err != nil {
-				return fmt.Errorf("trying to delete object from S3 bucket: %v", err)
-			}
-		}
-	}
-
-	return nil
+	return objects
 }
 
 func (x *S3) getBucket() (*s3.Bucket, error) {
@@ -104,7 +109,7 @@ func (x *S3) getBucket() (*s3.Bucket, error) {
 
 	bucket, err := s.Bucket(x.Bucket)
 	if err != nil {
-		return nil, fmt.Errorf("trying return S3 bucket: %v", err)
+		return nil, fmt.Errorf("failed to return S3 bucket: %v", err)
 	}
 
 	return bucket, nil
