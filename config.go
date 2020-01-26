@@ -26,12 +26,12 @@ func (c *Config) Parse(configFile string) error {
 
 	configJson, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		return fmt.Errorf("reading json config file: %v", err)
+		return fmt.Errorf("failed parsing json config file %s: %s", configFile, err)
 	}
 
 	err = json.Unmarshal(configJson, &c)
 	if err != nil {
-		return fmt.Errorf("trying to unmarshal json config: %v", err)
+		return fmt.Errorf("failed to unmarshal json config %s: %s", configFile, err)
 	}
 
 	return nil
@@ -39,19 +39,23 @@ func (c *Config) Parse(configFile string) error {
 
 func (c *Config) Validate() error {
 	if isEmpty(c.MysqlHost) {
-		return fmt.Errorf("MySQL host is not filled")
+		return fmt.Errorf("db host host is not filled")
 	}
 	if isEmpty(c.MysqlPort) {
-		return fmt.Errorf("MySQL port is not filled")
+		return fmt.Errorf("db port is not filled")
 	}
 	if isEmpty(c.MysqlDb) {
-		return fmt.Errorf("MySQL database name is not filled")
+		return fmt.Errorf("db name is not filled")
 	}
 	if isEmpty(c.MysqlUser) {
-		return fmt.Errorf("MySQL user is not filled")
+		return fmt.Errorf("db user is not filled")
 	}
 	if isEmpty(c.AwsRegion) || isEmpty(c.AwsBucket) || isEmpty(c.AwsKey) || isEmpty(c.AwsSecret) {
 		return fmt.Errorf("AWS data is not filled")
+	}
+
+	if c.DumpsToKeep < 0 {
+		return fmt.Errorf("dumpsToKeep should be >= 0, %v given", c.DumpsToKeep)
 	}
 
 	return nil
