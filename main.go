@@ -20,20 +20,8 @@ func main() {
 }
 
 func run(config *Config) {
-	s3 := &S3{
-		Region:       config.AwsRegion,
-		Bucket:       config.AwsBucket,
-		AccessKey:    config.AwsKey,
-		ClientSecret: config.AwsSecret,
-	}
-	mysql := &MySQL{
-		Host:     config.MysqlHost,
-		Port:     config.MysqlPort,
-		DB:       config.MysqlDb,
-		User:     config.MysqlUser,
-		Password: config.MysqlPass,
-		Options:  nil,
-	}
+	s3 := newS3(config)
+	mysql := newMySQL(config)
 
 	ch := make(chan bool)
 	go deleteOldDumps(s3, config.DumpsToKeep, ch)
@@ -41,16 +29,36 @@ func run(config *Config) {
 	dump := mysql.Dump()
 
 	if err := s3.Upload(dump); err != nil {
-		fmt.Printf("Problem(s) while uploading file to S3: %v", err)
+		log.Printf("Problem(s) while uploading file to S3: %v", err)
 	}
 
 	if err := dump.Delete(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	<-ch
 
 	fmt.Println("Success!")
+}
+
+func newMySQL(config *Config) *MySQL {
+	return &MySQL{
+		Host:     config.MysqlHost,
+		Port:     config.MysqlPort,
+		DB:       config.MysqlDb,
+		User:     config.MysqlUser,
+		Password: config.MysqlPass,
+		Options:  nil,
+	}
+}
+
+func newS3(config *Config) *S3 {
+	return &S3{
+		Region:       config.AwsRegion,
+		BucketName:   config.AwsBucket,
+		AccessKey:    config.AwsKey,
+		ClientSecret: config.AwsSecret,
+	}
 }
 
 func getConfig(configFile string) (*Config, error) {
