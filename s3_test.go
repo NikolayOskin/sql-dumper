@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"gopkg.in/amz.v3/s3"
+	"io"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -39,20 +43,20 @@ func TestSortFilesByLastModified(t *testing.T) {
 
 func TestGetBucket(t *testing.T) {
 	s := &S3{}
-	s.Bucket = "some-bucket"
+	s.BucketName = "some-bucket"
 	s.AccessKey = "****"
 	s.ClientSecret = "***"
 
 	_, err := s.getBucket()
 	if err != nil {
-		t.Errorf("Bucket is not returned even if its name is valid")
+		t.Errorf("BucketName is not returned even if its name is valid")
 	}
 }
 
 func TestS3_Upload(t *testing.T) {
 	s := &S3{
 		Region:       "some",
-		Bucket:       "some",
+		BucketName:   "some",
 		AccessKey:    "some",
 		ClientSecret: "some",
 	}
@@ -85,7 +89,7 @@ func TestS3_Upload(t *testing.T) {
 
 func TestUploadWithIncorrectBucketName(t *testing.T) {
 	s := &S3{}
-	s.Bucket = "some@@@bucket"
+	s.BucketName = "some@@@bucket"
 	s.AccessKey = "****"
 	s.ClientSecret = "***"
 
@@ -93,6 +97,24 @@ func TestUploadWithIncorrectBucketName(t *testing.T) {
 	err := s.Upload(dump)
 	if err == nil {
 		t.Errorf("Incorrect bucket name didn't throw and error")
+	}
+}
+
+func TestS3_DeleteOldFiles(t *testing.T) {
+	var buf bytes.Buffer
+	b := &BucketMock{}
+	s := &S3{
+		Bucket: b,
+	}
+
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+	s.DeleteOldFiles(1)
+
+	if buf.Len() == 0 {
+		t.Errorf("nothing was written to log")
 	}
 }
 
@@ -110,28 +132,6 @@ func TestKeepLatest(t *testing.T) {
 	if len(latestObjects) != 4 {
 		t.Errorf("Slice size must be 4")
 	}
-}
-
-func generateObjects() []ObjectS3 {
-	objects := []ObjectS3{
-		{
-			Key:          "some",
-			LastModified: time.Now(),
-		},
-		{
-			Key:          "some1",
-			LastModified: time.Now().Add(1),
-		},
-		{
-			Key:          "some2",
-			LastModified: time.Now().Add(2),
-		},
-		{
-			Key:          "some3",
-			LastModified: time.Now().Add(3),
-		},
-	}
-	return objects
 }
 
 func TestIsLatest(t *testing.T) {
@@ -162,4 +162,58 @@ func TestGetObjects(t *testing.T) {
 	if objects == nil {
 		t.Fail()
 	}
+}
+
+// HELPERS & MOCKS
+type BucketMock struct{}
+
+func (b *BucketMock) List(prefix string, delim string, marker string, max int) (*s3.ListResp, error) {
+	l := &s3.ListResp{}
+	l.Contents = []s3.Key{
+		{
+			Key:          "some1",
+			LastModified: "2006-01-02T15:04:05.000Z",
+		},
+		{
+			Key:          "some2",
+			LastModified: "2006-01-05T15:04:05.000Z",
+		},
+		{
+			Key:          "some3",
+			LastModified: "2006-01-09T15:04:05.000Z",
+		},
+		{
+			Key:          "some4",
+			LastModified: "2008-01-09T15:04:05.000Z",
+		},
+	}
+	return l, nil
+}
+func (b *BucketMock) Del(s string) error {
+	return fmt.Errorf("failed to delete %s", s)
+}
+func (b *BucketMock) PutReader(path string, r io.Reader, length int64, contType string, perm s3.ACL) error {
+	return nil
+}
+
+func generateObjects() []ObjectS3 {
+	objects := []ObjectS3{
+		{
+			Key:          "some",
+			LastModified: time.Now(),
+		},
+		{
+			Key:          "some1",
+			LastModified: time.Now().Add(1),
+		},
+		{
+			Key:          "some2",
+			LastModified: time.Now().Add(2),
+		},
+		{
+			Key:          "some3",
+			LastModified: time.Now().Add(3),
+		},
+	}
+	return objects
 }
