@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"testing"
 )
@@ -33,5 +35,23 @@ func TestExportResult_Delete(t *testing.T) {
 	err = result.Delete()
 	if err == nil {
 		t.Fatal(err)
+	}
+}
+
+func Test_Delete_Old_Dumps(t *testing.T) {
+	var buf bytes.Buffer
+
+	s3 := &S3{}
+	ch := make(chan bool)
+
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+	go deleteOldDumps(s3, 10, ch)
+
+	<-ch
+	if buf.Len() == 0 {
+		t.Errorf("nothing was written to log")
 	}
 }

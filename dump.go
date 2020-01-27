@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -33,7 +34,7 @@ func (x *ExportResult) Delete() error {
 func deleteOldDumps(s3 *S3, dumpsToKeep int, ch chan<- bool) {
 	err := s3.DeleteOldFiles(dumpsToKeep)
 	if err != nil {
-		fmt.Printf("failed to delete old dumps from S3: %v", err)
+		log.Printf("failed to delete old dumps from S3: %v", err)
 	}
 
 	ch <- true
