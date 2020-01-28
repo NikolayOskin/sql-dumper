@@ -32,9 +32,11 @@ func (x *ExportResult) Delete() error {
 }
 
 func deleteOldDumps(s3 *S3, dumpsToKeep int, ch chan<- bool) {
-	err := s3.DeleteOldFiles(dumpsToKeep)
-	if err != nil {
-		log.Printf("failed to delete old dumps from S3: %v", err)
+	if dumpsToKeep > 0 {
+		err := s3.DeleteOldFiles(dumpsToKeep)
+		if err != nil {
+			log.Printf("failed to delete old dumps from S3: %v", err)
+		}
 	}
 
 	ch <- true
