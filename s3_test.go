@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestConvertStringToTime(t *testing.T) {
+func Test_Convert_LastModified_String_To_Time(t *testing.T) {
 	s := "2006-01-02T15:04:05.000Z"
 	result := convertStringToTime(s)
 	parsedStr, _ := time.Parse(s, s)
@@ -21,7 +21,8 @@ func TestConvertStringToTime(t *testing.T) {
 	}
 }
 
-func TestSortFilesByLastModified(t *testing.T) {
+func Test_Sort_Files_By_LastModified(t *testing.T) {
+	// Prepare
 	obj1 := ObjectS3{
 		Key:          "some_name1",
 		LastModified: time.Now(),
@@ -32,16 +33,20 @@ func TestSortFilesByLastModified(t *testing.T) {
 	}
 	objects := []ObjectS3{obj1, obj2}
 
-	firstObjBeforeSorting := objects[0]
-	sortByLastModified(objects)
-	firstObjAfterSorting := objects[0]
+	// Sort
+	firstBefore := objects[0]
 
-	if firstObjBeforeSorting == firstObjAfterSorting {
-		t.Errorf("Objects in slice were not sorted properly")
+	sortByLastModified(objects)
+
+	firstAfter := objects[0]
+
+	// Check
+	if firstBefore == firstAfter {
+		t.Errorf("Objects in slice were not sorted")
 	}
 }
 
-func TestGetBucket(t *testing.T) {
+func Test_GetBucket(t *testing.T) {
 	s := &S3{}
 	s.BucketName = "some-bucket"
 	s.AccessKey = "****"
@@ -53,7 +58,7 @@ func TestGetBucket(t *testing.T) {
 	}
 }
 
-func TestS3_Upload(t *testing.T) {
+func Test_Upload_Returns_Errors(t *testing.T) {
 	s := &S3{
 		Region:       "some",
 		BucketName:   "some",
@@ -87,7 +92,7 @@ func TestS3_Upload(t *testing.T) {
 	}
 }
 
-func TestUploadWithIncorrectBucketName(t *testing.T) {
+func Test_Upload_With_Incorrect_BucketName(t *testing.T) {
 	s := &S3{}
 	s.BucketName = "some@@@bucket"
 	s.AccessKey = "****"
@@ -100,12 +105,10 @@ func TestUploadWithIncorrectBucketName(t *testing.T) {
 	}
 }
 
-func TestS3_DeleteOldFiles(t *testing.T) {
+func Test_DeleteOldFiles_Writes_Deleting_Errors_To_Log(t *testing.T) {
 	var buf bytes.Buffer
 	b := &BucketMock{}
-	s := &S3{
-		Bucket: b,
-	}
+	s := &S3{Bucket: b}
 
 	log.SetOutput(&buf)
 	defer func() {
@@ -118,8 +121,8 @@ func TestS3_DeleteOldFiles(t *testing.T) {
 	}
 }
 
-func TestKeepLatest(t *testing.T) {
-	objects := generateObjects()
+func Test_KeepLatest(t *testing.T) {
+	objects := generateObjects() // 4 objects
 
 	// DumpsToKeep is less than slice length
 	latestObjects := keepLatest(objects, 3)
@@ -134,21 +137,27 @@ func TestKeepLatest(t *testing.T) {
 	}
 }
 
-func TestIsLatest(t *testing.T) {
+func Test_IsLatest(t *testing.T) {
 	objects := generateObjects()
 
-	result := isLatest("some", objects)
-	if result == false {
-		t.Errorf("Object not found in collection")
+	testCases := []struct {
+		Name     string
+		Expected bool
+	}{
+		{"some", true},
+		{"blahblah", false},
 	}
 
-	result = isLatest("12312312313", objects)
-	if result == true {
-		t.Errorf("Object not found in collection")
+	for _, tc := range testCases {
+		result := isLatest(tc.Name, objects)
+		if result != tc.Expected {
+			t.Errorf("failed, name:%s, expected: %t, actual: %t", tc.Name, tc.Expected, result)
+		}
 	}
 }
 
-func TestGetObjects(t *testing.T) {
+func Test_GetObjects_From_Bucket(t *testing.T) {
+	// Mocking
 	list := &s3.ListResp{
 		Contents: []s3.Key{
 			{
@@ -158,6 +167,8 @@ func TestGetObjects(t *testing.T) {
 		},
 	}
 	S3 := &S3{}
+
+	// Trying to retrieve objects from mocked response
 	objects := S3.getObjects(list)
 	if objects == nil {
 		t.Fail()

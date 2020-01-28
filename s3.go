@@ -48,6 +48,7 @@ func (x *S3) Upload(dump *ExportResult) error {
 	if err != nil {
 		return fmt.Errorf("failed open file %s: %s", dump.Path, err)
 	}
+	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
@@ -58,11 +59,8 @@ func (x *S3) Upload(dump *ExportResult) error {
 
 	err = bucket.PutReader(dump.Filename(), file, size, dump.MIME, s3.BucketOwnerFull)
 	if err != nil {
-		file.Close()
 		return fmt.Errorf("failed to upload file %s to S3: %s", dump.Filename(), err)
 	}
-
-	file.Close()
 
 	return nil
 }
