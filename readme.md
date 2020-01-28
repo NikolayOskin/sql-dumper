@@ -3,7 +3,7 @@
 Simple command-line interface for MySQL dumps and uploading to AWS S3.  
 Dump example: `2020-01-15_1580218829.sql` where `1580218829` is the unix timestamp.
 
-#####How to run:
+##### How to run:  
  
 `cp config.example.json config.json`  
 `go build`  
@@ -14,7 +14,7 @@ You can exec the command with "-config" flag: `./aws-dumper -config any.json`
 
 Run in console or using cron.
 
-###Cron
+### Cron  
 Because dumper executes system command (mysqldump), you may run into issues where crontab can't find it.  
 The issue can be resolved by adding path variables to the `crontab -e` file.  
 ```
@@ -33,8 +33,8 @@ PATH=$PATH:/usr/local/bin:/usr/bin:/bin
 ```
 
 
-### Config fields
-##### dumpsToKeep
+### Config fields  
+##### dumpsToKeep  
 "dumpsToKeep" is the amount of latest dumps which will be kept in AWS S3 Bucket.  
 Let's say if you are running dumper once a day
 by cronjob and "dumpsToKeep" is 10, then only 10 latest dumps will be kept and all older dump files will be deleted.
