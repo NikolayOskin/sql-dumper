@@ -11,14 +11,15 @@ go build
 ```
 
 
-You can exec the command with "-config" flag: `./aws-dumper -config cfg.json`  
-If executed without flags then "config.json" will be used by default.  
+You can exec the command with "-config" flag: `./aws-dumper -config=/path/to/config.json`  
+If executed without flags then "./config.json" will be used by default.  
 
 The program uses `mysqldump` utility to dump your database so it must be installed. It's probably already installed if you use mysql on your server(machine).
 
 ## Cron  
 Because dumper executes system command (mysqldump), you may run into issues where crontab can't find it.  
 The issue can be resolved by adding path variables to the `crontab -e` file.  
+You must set your "-config" flag with the absolute path to your config file, otherwise you will get `open ./config.json: no such file or directory` error.
 ```
 PATH=$PATH:/usr/local/bin:/usr/bin:/bin
 
@@ -30,10 +31,13 @@ PATH=$PATH:/usr/local/bin:/usr/bin:/bin
 # | | | +------- month (1 - 12)
 # | | | | +---- day of week (0 - 6) (Sunday=0)
 # | | | | |
-  0 0 * * * /backup/aws-dumper
-
+  0 0 * * * /backup/aws-dumper -config=/path/to/the/config.json >> /dev/null 2>&1
 ```
 
+Instead of `/dev/null` you can set your log file location.
+```
+0 0 * * * /backup/aws-dumper -config=/path/to/the/config.json >> /var/log/aws-dumper.log 2>&1
+```
 
 ## Config
 #### dumpsToKeep  
