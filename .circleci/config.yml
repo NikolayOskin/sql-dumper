@@ -16,16 +16,3 @@ jobs:
       # specify any bash command here prefixed with `run: `
       #- run: go get -v -t -d ./...
       - run: go test -v
-  test:
-    docker:
-      - image: circleci/golang:1.12
-
-    working_directory: /go/src/github.com/NikolayOskin/sql-dumper
-    steps:
-      - checkout
-
-      - run: go get gopkg.in/amz.v3/aws
-      - run: go get gopkg.in/amz.v3/s3
-      - run: go get github.com/mattn/goveralls
-      - run: go test -v -cover -race -coverprofile=/home/ubuntu/coverage.out
-      - run: /home/ubuntu/.go_workspace/bin/goveralls -coverprofile=/home/ubuntu/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN

@@ -1,5 +1,8 @@
 # MySQL dumper and uploader to AWS S3
 
+[![CircleCI](https://circleci.com/gh/NikolayOskin/sql-dumper.svg?style=svg)](https://circleci.com/gh/NikolayOskin/sql-dumper)
+
+
 Simple command-line interface for MySQL dumps and uploading to AWS S3. Run it in console or using cron.  
 Dump file name example: `2020-01-15_1580218829.sql` where `1580218829` is the unix timestamp.
 
@@ -19,7 +22,6 @@ The program uses `mysqldump` utility to dump your database so it must be install
 ## Cron  
 Because dumper executes system command (mysqldump), you may run into issues where crontab can't find it.  
 The issue can be resolved by adding path variables to the `crontab -e` file.  
-You must set your "-config" flag with the absolute path to your config file, otherwise you will get `open ./config.json: no such file or directory` error.
 ```
 PATH=$PATH:/usr/local/bin:/usr/bin:/bin
 
@@ -33,6 +35,8 @@ PATH=$PATH:/usr/local/bin:/usr/bin:/bin
 # | | | | |
   0 0 * * * /backup/aws-dumper -config=/path/to/the/config.json >> /dev/null 2>&1
 ```
+You must set your "-config" flag with the absolute path to your config file, 
+otherwise you will get `open ./config.json: no such file or directory` error.  
 
 Instead of `/dev/null` you can set your log file location.
 ```
